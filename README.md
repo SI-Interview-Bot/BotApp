@@ -2,6 +2,7 @@
 
 ## Setting up
 
+### Workspace:
 1. Install `node`:
     - `sudo apt update`
     - `sudo apt install nodejs`
@@ -16,4 +17,6 @@
 2. `sudo yarn install`
 3. `sudo npm install`
 4. `sudo yarn run dev`
-5. `snap install ngrok`
+
+### Testing:
+1. `snap install ngrok`
