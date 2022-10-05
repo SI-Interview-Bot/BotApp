@@ -10,8 +10,6 @@ const app = new App({
   signingSecret: process.env.SLACK_SIGNING_SECRET,
 });
 
-
-
 app.command("/test", async ({ command, ack, say }) => {
     try {
       await ack();
