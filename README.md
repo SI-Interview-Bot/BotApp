@@ -99,3 +99,7 @@ The `Forwarding` address will need to be added to the slack workspace.
 
 ![image](https://user-images.githubusercontent.com/10299252/198033267-6c425cbe-5c2d-4d09-9865-a54c05f5accc.png)
 ![image](https://user-images.githubusercontent.com/10299252/198033466-d04708b7-1881-4231-ab37-72df2298ea1d.png)
+
+- You must also update your app's Event Subscriptions
+
+![image](https://user-images.githubusercontent.com/10299252/198040497-d8ba88aa-73ff-4e99-8fa7-7dbf102f68ed.png)
