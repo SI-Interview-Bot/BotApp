@@ -9,7 +9,13 @@ liaison with slack users to manage the scheduling data.
 
 ## Workspace
 
-TODO: Instructions for setting up a Slack workspace sandbox for development
+- Copy ngrok's forwarding address to your app settings in api.slack.com
+  In your app's settings, go to Slash Commands. For every Slash Command
+  update the Request URL with ngrok's forwarding address. The forwarding
+  address will likely change with every new running instance of ngrok.
+
+![image](https://user-images.githubusercontent.com/10299252/198033267-6c425cbe-5c2d-4d09-9865-a54c05f5accc.png)
+![image](https://user-images.githubusercontent.com/10299252/198033466-d04708b7-1881-4231-ab37-72df2298ea1d.png)
 
 ## Development Environment
 
@@ -67,6 +73,11 @@ To test your bot you will need to redirect `localhost` to a forwarding url that
 is visable to slack.  `ngrok` is a simple way to accomplish this.
 
 - To install, run `snap install ngrok`.
+
+- Once installed, visit ngrok.com, create an account, and go to Setup & Installation.
+  From step 2, copy and paste the command to add your authorization token.
+  It should look something like this:
+  `ngrok config add-authtoken 2GfobMBf*&^785V876b887n87^*%%^%^bfg8b66UYJYYF^67`
 
 The bot is hosted on port `3000` by default. To start the session, simply run the following:
 - In a new terminal window run, `ngrok http 3000`
