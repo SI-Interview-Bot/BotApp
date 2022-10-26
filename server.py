@@ -34,6 +34,6 @@ def receive_JIRA_JSON():
     # Open .json file
     with open("local_JSON_file.json", "a") as local_JSON_file:
         # Write it into a file for the JavaScript bot to read from
-        local_JSON_file.write(f"{incoming_json_object}")
+        local_JSON_file.write(f"{incoming_json_object}\n\n")
 
     return f"200 OK\nCleaned JIRA JSON Saved into local_JSON_file.json.\n"
