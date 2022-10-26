@@ -95,6 +95,7 @@ The `Forwarding` address will need to be added to the slack workspace.
   In your app's settings, go to Slash Commands. For every Slash Command
   update the Request URL with ngrok's forwarding address. The forwarding
   address will likely change with every new running instance of ngrok.
+  Manually add `/slack/events` at the end of the forwarding address.
 
 ![image](https://user-images.githubusercontent.com/10299252/198033267-6c425cbe-5c2d-4d09-9865-a54c05f5accc.png)
 ![image](https://user-images.githubusercontent.com/10299252/198033466-d04708b7-1881-4231-ab37-72df2298ea1d.png)
