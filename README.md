@@ -7,16 +7,6 @@ Interview Bot is a simple slack bot that deals with (re?)scheduling appointments
 Jira webhooks are fed to a simple backend flask server. This bot then works in
 liaison with slack users to manage the scheduling data.
 
-## Workspace
-
-- Copy ngrok's forwarding address to your app settings in api.slack.com
-  In your app's settings, go to Slash Commands. For every Slash Command
-  update the Request URL with ngrok's forwarding address. The forwarding
-  address will likely change with every new running instance of ngrok.
-
-![image](https://user-images.githubusercontent.com/10299252/198033267-6c425cbe-5c2d-4d09-9865-a54c05f5accc.png)
-![image](https://user-images.githubusercontent.com/10299252/198033466-d04708b7-1881-4231-ab37-72df2298ea1d.png)
-
 ## Development Environment
 
 All the required packages are tracked between node and yarn.
@@ -98,4 +88,13 @@ Connections                   ttl     opn     rt1     rt5     p50     p90
 ```
 
 The `Forwarding` address will need to be added to the slack workspace.
-This will be covered in the [workspace](#workspace) section above.
+
+## Slack App Workspace
+
+- Copy ngrok's forwarding address to your app settings in api.slack.com
+  In your app's settings, go to Slash Commands. For every Slash Command
+  update the Request URL with ngrok's forwarding address. The forwarding
+  address will likely change with every new running instance of ngrok.
+
+![image](https://user-images.githubusercontent.com/10299252/198033267-6c425cbe-5c2d-4d09-9865-a54c05f5accc.png)
+![image](https://user-images.githubusercontent.com/10299252/198033466-d04708b7-1881-4231-ab37-72df2298ea1d.png)
