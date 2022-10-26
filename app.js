@@ -29,6 +29,19 @@ app.message(/hey/, async ({ command, say }) => {
     }
 });
 
+app.message(/get/, async ({ command, say }) => {
+    try {
+      say("Getting latest interview...");
+      // Get latest interview from database
+      // Format message to look similar to:
+      // VR Intern PS CT-5566 Gwendolyn on Wednesday, 10/26 at 11:30am EDT (10:30am CDT for candidate) (Zoom)
+      // say(`${positionType} ${jobType} ${interviewType} ${jiraTicket} ${firstName} on ${monTueWedThrFri}, ${month}/${day} at ${localMelbourneTime} EDT (${location})`)
+    } catch (error) {
+        console.log("err")
+      console.error(error);
+    }
+});
+
 (async () => {
   const port = 3000
   // Start your app
