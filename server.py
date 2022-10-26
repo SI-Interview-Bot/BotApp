@@ -31,10 +31,9 @@ def receive_JIRA_JSON():
     incoming_json_object = receive_data()
     stdout.write(f"{incoming_json_object}\n")
 
-    # Connect database
+    # Open .json file
+    with open("local_JSON_file.json", "a") as local_JSON_file:
+        # Write it into a file for the JavaScript bot to read from
+        local_JSON_file.write(f"{incoming_json_object}")
 
-    # Save JSON Object into database
-
-    # Close database
-
-    return f"200 OK\nJIRA JSON Saved into database.\n"
+    return f"200 OK\nCleaned JIRA JSON Saved into local_JSON_file.json.\n"
