@@ -1,3 +1,8 @@
+# TODO: Update instructions to develop for Python instead of JavaScript
+# New dependencies for Python include:
+1. pip3 install slack
+2. pip3 install slackeventsapi
+
 # Interview Bot
 
 _Development should be done with any modern distro of Linux._
