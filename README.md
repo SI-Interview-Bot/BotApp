@@ -4,6 +4,9 @@
 2. `pip3 install slack_sdk`
 3. `pip3 install slackeventsapi`
 
+# Install Docker engine:
+1. https://docs.docker.com/engine/install/ubuntu/
+
 # Interview Bot
 
 _Development should be done with any modern distro of Linux._
