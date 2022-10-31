@@ -1,0 +1,9 @@
+version: '3.9'
+services:
+ slack_bot_service:
+  container_name: slack_bot
+  image: slack_bot_image:latest
+  cpus: 1
+  mem_limit: 256m
+  ports:
+   - "8088:8088"
