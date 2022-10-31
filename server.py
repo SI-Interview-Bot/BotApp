@@ -10,8 +10,8 @@ from sys import stdout
 # Non-standard imports
 from flask import Flask, request
 
+# End point names
 RECEIVE_JIRA_JSON = "receive-JIRA-JSON"
-ISSUE_UPDATE = "issue-update"
 
 app = Flask(__name__)
 
