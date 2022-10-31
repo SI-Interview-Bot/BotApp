@@ -1,7 +1,8 @@
 # TODO: Update instructions to develop for Python instead of JavaScript
 # New dependencies for Python include:
-1. pip3 install slack
-2. pip3 install slackeventsapi
+1. `pip3 install aiohttp`
+2. `pip3 install slack_sdk`
+3. `pip3 install slackeventsapi`
 
 # Interview Bot
 
