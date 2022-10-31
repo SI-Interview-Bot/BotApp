@@ -10,7 +10,9 @@ from http import client
 # Non-standard imports
 import slack
 
-from flask import Flask, request, Response
+from dotenv         import load_dotenv
+from flask          import Flask, request, Response
+from pathlib        import Path
 from slackeventsapi import SlackEventAdapter
 
 #Establish some global variables. Maybe establish a predefined object with all this stuff?
@@ -19,9 +21,13 @@ DEBUG_STATUS = True
 WORKING_CHANNEL = '#interviewbot-test'
 
 app = Flask(__name__)
-slack_event_adapter = SlackEventAdapter(os.environ['SIGNING_SECRET'],'/slack/events', app)
 
+env_path = Path('.') / '.env'
+load_dotenv(dotenv_path=env_path)
+
+slack_event_adapter = SlackEventAdapter(os.environ['SIGNING_SECRET'],'/slack/events', app)
 client = slack.WebClient(token=os.environ['SLACK_TOKEN'])
+
 BOT_ID = client.api_call("auth.test")['user_id']
 #client.chat_postMessage(channel='#interviewbot-test', text="Hello World!")
 
