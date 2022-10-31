@@ -1,5 +1,6 @@
 FROM python:latest
 
+COPY .env /
 COPY bot.py /
 COPY ./requirements.txt /requirements.txt
 
