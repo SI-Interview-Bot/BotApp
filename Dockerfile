@@ -6,6 +6,6 @@ COPY ./requirements.txt /requirements.txt
 
 RUN pip install -r /requirements.txt
 
-EXPOSE 8088
+EXPOSE 4444
 
-CMD [ "flask", "--app", "bot.py", "run", "-p", "8088", "--host=0.0.0.0"]
+CMD [ "flask", "--app", "bot.py", "run", "-p", "4444", "--host=slack_bot"]
