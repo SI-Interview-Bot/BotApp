@@ -4,6 +4,7 @@ Slack Bot used to post information about interviews to our channel.
 
 # Standard imports
 import os
+import json
 
 from http import client
 from sys  import stdout
