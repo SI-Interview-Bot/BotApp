@@ -18,9 +18,17 @@ liaison with slack users to manage the scheduling data.
         curl \
         gnupg \
         lsb-release`
-3. 
+3. `sudo mkdir -p /etc/apt/keyrings`
+4. `curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo gpg --dearmor -o /etc/apt/keyrings/docker.gpg`
+5. `echo \
+  "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.gpg] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) stable" | sudo tee /etc/apt/sources.list.d/docker.list > /dev/null`
+6. `sudo apt-get update`
+7. `sudo apt-get install docker-ce docker-ce-cli containerd.io docker-compose-plugin`
+8. `sudo docker run hello-world`
 ## Install `git`: https://github.com/git-guides/install-git
-1. 
+1. `sudo apt-get update`
+2. `sudo apt-get install git-all`
 ## Install `ngrok`: https://ngrok.com/download
 1. `snap install ngrok`
 
@@ -30,8 +38,6 @@ liaison with slack users to manage the scheduling data.
 ### Testing:
 To test your bot you will need to redirect `localhost` to a forwarding url that
 is visable to slack. `ngrok` is a simple way to accomplish this.
-
-- To install, run `snap install ngrok`.
 
 - Once installed, visit ngrok.com, create an account, and go to Setup & Installation.
   From step 2, copy and paste the command to add your authorization token.
@@ -56,7 +62,7 @@ Connections                   ttl     opn     rt1     rt5     p50     p90
                               0       0       0.00    0.00    0.00    0.00  
 ```
 
-The `Forwarding` address will need to be added to the slack workspace.
+The `Forwarding` address will need to be added to the Slack Workspace.
 
 ## Slack App Workspace
 
