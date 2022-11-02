@@ -1,12 +1,3 @@
-# TODO: Update instructions to develop for Python instead of JavaScript
-# New dependencies for Python include:
-1. `pip3 install aiohttp`
-2. `pip3 install slack_sdk`
-3. `pip3 install slackeventsapi`
-
-# Install Docker engine:
-1. https://docs.docker.com/engine/install/ubuntu/
-
 # Interview Bot
 
 _Development should be done with any modern distro of Linux._
@@ -16,60 +7,29 @@ Interview Bot is a simple slack bot that deals with (re?)scheduling appointments
 Jira webhooks are fed to a simple backend flask server. This bot then works in
 liaison with slack users to manage the scheduling data.
 
+# Dependencies for Python development are included in the requirements.txt file
+
 ## Development Environment
 
-All the required packages are tracked between node and yarn.
+## Install `docker` (Docker Engine): https://docs.docker.com/engine/install/ubuntu/
+ 1. `sudo apt-get update`
+ 2. `sudo apt-get install \
+        ca-certificates \
+        curl \
+        gnupg \
+        lsb-release`
+3. 
+## Install `git`: https://github.com/git-guides/install-git
+1. 
+## Install `ngrok`: https://ngrok.com/download
+1. `snap install ngrok`
 
-Make sure you have `node` and the node package manager (`npm`) installed:
-
-__NOTE__: `node 16.17+` is required.
-
-1. Install `node`
-    - `sudo apt update`
-    - `sudo apt install nodejs`
-2. Install `npm`:
-    - `sudo apt install npm`
-
-Check the installation with `node -v`.
-
-Next, install `yarn v1.22+`:
-- `sudo npm install -g yarn`
-
-Similarly, check the yarn version, `yarn -v`.
-
-### Setting up the repo
-
-Clone the repo to your local machine. `cd` to the directory where the
-project was cloned and run the following commands:
-
-- `sudo yarn install`
-- `sudo npm install`
-
-The above commands will install all the required dependencies for the
-project.
-
-The `app.js` will run as a refreshable background daemon that updates on changes.
-To start it up, run the following (TODO: add a test script):
-
-- `sudo yarn run dev`
-
-You should see something like the following:
-
-```
-[nodemon] 2.0.20
-[nodemon] to restart at any time, enter `rs`
-[nodemon] watching path(s): *.*
-[nodemon] watching extensions: js,mjs,json
-[nodemon] starting `node app.js`
-⚡️ Slack Bolt app is running on port 3000!
-```
-
-The bot is now up and running!
+### Setting up the repo:
+1. `git clone https://github.com/SI-Interview-Bot/BotApp.git`
 
 ### Testing:
-
 To test your bot you will need to redirect `localhost` to a forwarding url that
-is visable to slack.  `ngrok` is a simple way to accomplish this.
+is visable to slack. `ngrok` is a simple way to accomplish this.
 
 - To install, run `snap install ngrok`.
 
