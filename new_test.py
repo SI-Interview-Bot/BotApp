@@ -6,8 +6,7 @@ Slack Bot used to post information about interviews to our channel.
 import os
 
 from http import client
-from aiohttp import Payload, payload_type
-import string
+#from aiohttp import Payload, payload_type
 
 # Non-standard imports
 
