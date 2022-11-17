@@ -6,17 +6,23 @@ Slack Bot used to post information about interviews to our channel.
 import os
 
 from http import client
-#from aiohttp import Payload, payload_type
+import string
+import json
 
 # Non-standard imports
-
 import slack_sdk
 from flask import Flask, request, Response
+#from flask_script import Manager
+
+# Need this import to do actions after loading app, running into errors...
+# From flask_script import Manager
 from dotenv import load_dotenv  
 from pathlib import Path
 from slackeventsapi import SlackEventAdapter
 
-#Establish some global variables. Maybe establish a predefined object with all this stuff?
+###########################################################################################
+#                                   GLOBALS                                               #
+###########################################################################################
 env_path = Path('.') / '.env'
 load_dotenv(dotenv_path=env_path)
 
@@ -25,20 +31,20 @@ DEBUG_STATUS = True
 WORKING_CHANNEL = '#interviewbot-test'
 
 app = Flask(__name__)
+#manager = Manager(app)
+JSON_FILE = 'db.json'
 
 slack_event_adapter = SlackEventAdapter(os.environ['SIGNING_SECRET'],'/slack/events', app)
 client = slack_sdk.WebClient(token=os.environ['SLACK_TOKEN'])
 
-BOT_ID = client.api_call("auth.test")['user_id']
-#client.chat_postMessage(channel='#interviewbot-test', text="Hello World!")
+BOT_ID = client.api_call('auth.test')['user_id']
 
-# The mini database will be ordered as such:
-# MessageID : {checkmark_responses: [list_of_user_names], x_responses: [list_of_user_names]}
 interview_messages = {}
 
-# class with welcome message and storage information.
-# to be edited to store messages and reactions, but used for testing for now
-class InterviewMessage:
+###########################################################################################
+#                                   CLASSES                                               #
+###########################################################################################
+class InterviewInformation:
     START_TEXT = {
         'type': 'section',
         'text' : {
@@ -51,54 +57,96 @@ class InterviewMessage:
 
     DIVIDER = {'type': 'divider'}
 
-    def __init__(self, channel, user):
-        self.channel = channel
-        self.user = user
-        self.icon_emoji = ':robot_face:'
-        self.timestamp = ''
+    def __init__(self, interview_data: dict):
+        self._timestamp = None
+        self._interviewData = interview_data
         self.completed = False
 
-    def get_message(self):
-        return {
-            'ts': self.timestamp,
-            'channel': self.channel,
-            'username': 'testtest',
-            'icon_emoji': self.icon_emoji,
-            'blocks': [
-                self.START_TEXT,
-                self.DIVIDER,
-                 self._get_reaction_task
-            ]
-        }
+    #if we store the bots information as markdown we can edit it later, could be useful to say who is going to do that meeting and who is not, and whether enough people have said they are going to parttake in it
+    def create_and_send(self) -> bool:
+        success_status = True
+        if self._interview_type == '' or None:
+            success_status = False
+        if self._date_and_time == '' or None:
+            success_status = False
+        if self._JIRA_ticket_number == '' or None:
+            success_status = False
+        if self._name == '' or None:
+            success_status = False
+        
+        if success_status:
+            message_to_send = f'{self._JIRA_ticket_number}:{self._interview_type} {self._name} at {self._date_and_time}'
+            data = client.chat_postMessage(channel='#interviewbot-test', text=message_to_send)
+            self._timestamp = data['ts']
+        else:
+            print("something went wrong, was unable to verify the input json for all the proper information.")
 
-    def _get_reaction_task(self):
 
-        text = f'*React to this message!*'
+        return success_status
 
-        return [{'type': 'section', 'text': {'type': 'mrkdwn', 'text': text}}]
+    def get_timestamp(self) -> string:
+        return self._timestamp
 
 
+###########################################################################################
+#                                   FUNCTIONS                                             #
+###########################################################################################
+# Function needs to load the JSON file from 
+@app.route('/{ISSUE_UPDATE}', methods=['POST'])
+def load_interview_json() -> bool:
+    incoming_dictionary = request.get_data()
+    interview_data = json.loads(incoming_dictionary)
 
-# Functions belwo are designed for different /commands.
-@app.route('/message-count', methods=['POST'])
-def message_count():
-    return Response(), 200
+    return True
 
-@app.route('/test-message-builder', methods=['POST'])
-def TMB():
-    return Response(), 200
+def load_dictionary_from_json() -> bool:
+    dictionary_loaded = True
+    if (os.path.exists(f'./{JSON_FILE}')):
+        print(f'Found {JSON_FILE} in local directory. loading to dictionary now...')
+        interview_messages = json.load(f'./{JSON_FILE}')
+        # Need to make sure slack bot hasn't altered from directory, need to go through
+        # Messages to verifngroy. 
+    else:
+        print(f'Unable to find {JSON_FILE}. Starting with empty database...')
+    return dictionary_loaded
 
+def store_json_from_dictionary() -> bool:
+    json_object = json.dumps(interview_messages, JSON_FILE, indent = 4)
+    return True
+
+
+# Functions below are designed for different /commands.
 @app.route('/test', methods=['POST'])
 def test():
-    data = request.form
-    user_id = data.get('user_id')
-    channel_id = data.get('channel_id')
+    data = request.form # This gets data of instance of message
+    user_id = data.get('user_id') # This gets ther user_id
+    channel_id = data.get('channel_id') # This gets the channel id
+    ts = data.get('ts') # This gets the timestamp
     #print(data)
 
-    interview = InterviewMessage(channel_id, user_id)
+    someItem = client.chat_postMessage(channel='#interviewbot-test', text='test')
+
+    print(f'\n\n someItem is equal to: {someItem} \n\n')
+
+
     print(f'channel_ID: {channel_id}. user_id: {user_id}')
     
     return Response(), 200
+
+@app.route('/test_preloaded_json', methods=['POST'])
+def test_read_preloaded_json():
+    preloadedJSONFile = 'something.json'
+
+    if os.path.exists(f'./{preloadedJSONFile}'):
+        interview = InterviewInformation(json.load(preloadedJSONFile))
+        if interview.create_and_send():
+            interview_messages[interview.get_timestamp()] = interview
+            store_json_from_dictionary()
+        else:
+            print(f'unable to send proper interview message')
+    else:
+        print(f'unable to load {preloadedJSONFile}.\n')
+
 
 # Functions below are designed for different slack events, and handle those events.
 @slack_event_adapter.on('message')
@@ -107,6 +155,13 @@ def message(payLoad) -> None:
     channel_id = event.get('channel')
     user_id = event.get('user')
     text = event.get('text')
+
+
+
+    if user_id == BOT_ID:
+        print("Need to store items here so that I can store the bots information")
+    else:
+        print("Did not get the right user id")
 
     print(payLoad)
 
@@ -118,11 +173,14 @@ def removed_reaction(payLoad) -> None:
     user_id = event.get('user')
     reaction = payLoad.get('event').get('reaction')
 
+    # This statement checks for either white check mark or x, and returns if it is neither
     if reaction != 'white_check_mark' or 'x':
         return
+
+    # Need to implement a system that checks dictionary for discrepancies, fixes those discrepancies
+    # and then moves on. 
     
-    print('removed useless string, ignore')
-    print(payLoad)
+    #print(payLoad)
 
     return 
 
@@ -141,16 +199,19 @@ def reaction(payLoad) -> None:
         #client.chat_postMessage(channel='#interviewbot-test', text=f"{user_id} reacted with an x")
     #else:
         #client.chat_postMessage(channel='#interviewbot-test', text=f"{user_id} reacted with  useless emoji")
+
     
+    # After that is implemented, do a search of which message got a reaction and update the dictionary
+
     if item_user != BOT_ID:
         print(f"NOT THE BOT. BOT IS {BOT_ID}. item_user is: {item_user} \n")
     else:
         print("IS THE BOT")
-    print(payLoad)
+    
 
     return
 
 #main function that runs everything. 
 if __name__ == "__main__":
-
+    load_dictionary_from_json()
     app.run(debug=DEBUG_STATUS, port=8088)
