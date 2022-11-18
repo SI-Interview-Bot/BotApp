@@ -61,31 +61,48 @@ class InterviewInformation:
         self._timestamp = None
         self._interviewData = interview_data
         self.completed = False
+        self._attendants = []
 
     #if we store the bots information as markdown we can edit it later, could be useful to say who is going to do that meeting and who is not, and whether enough people have said they are going to parttake in it
     def create_and_send(self) -> bool:
         success_status = True
-        if self._interview_type == '' or None:
+        if self._interviewData['interviewType'] == '' or None:
             success_status = False
-        if self._date_and_time == '' or None:
+        if self._interviewData['dateTime'] == '' or None:
             success_status = False
-        if self._JIRA_ticket_number == '' or None:
+        if self._interviewData['JIRATicketNumber'] == '' or None:
             success_status = False
-        if self._name == '' or None:
+        if self._interviewData['name'] == '' or None:
             success_status = False
         
         if success_status:
-            message_to_send = f'{self._JIRA_ticket_number}:{self._interview_type} {self._name} at {self._date_and_time}'
+            message_to_send = f'{self._interviewData["JIRATicketNumber"]} : {self._interviewData["interviewType"]} {self._interviewData["name"]} at {self._interviewData["dateTime"]}'
             data = client.chat_postMessage(channel='#interviewbot-test', text=message_to_send)
             self._timestamp = data['ts']
         else:
             print("something went wrong, was unable to verify the input json for all the proper information.")
 
-
         return success_status
+
+    def add_attendant(self, attendant: string) -> bool:
+        if attendant not in self._attendants:
+            self._attendants.append(attendant)
+            return True
+        
+        return False
+
+    def remove_attendat(self, attendant: string) -> bool:
+        if attendant in self._attendants:
+            self._attendants.remove(attendant)
+            return True
+
+        return False
 
     def get_timestamp(self) -> string:
         return self._timestamp
+
+    def get_interviewdata(self) -> dict:
+        return self._interviewData
 
 
 ###########################################################################################
@@ -111,6 +128,8 @@ def load_dictionary_from_json() -> bool:
     return dictionary_loaded
 
 def store_json_from_dictionary() -> bool:
+    with open(JSON_FILE, 'w'):
+        json_object = json.dump(interview_messages, )
     json_object = json.dumps(interview_messages, JSON_FILE, indent = 4)
     return True
 
@@ -138,12 +157,14 @@ def test_read_preloaded_json():
     preloadedJSONFile = 'something.json'
 
     if os.path.exists(f'./{preloadedJSONFile}'):
-        interview = InterviewInformation(json.load(preloadedJSONFile))
-        if interview.create_and_send():
-            interview_messages[interview.get_timestamp()] = interview
-            store_json_from_dictionary()
-        else:
-            print(f'unable to send proper interview message')
+        with open(preloadedJSONFile, 'r') as file:
+            loaded_dict = json.load(file)
+            interview = InterviewInformation(loaded_dict)
+            if interview.create_and_send():
+                interview_messages[interview.get_timestamp()] = interview
+                store_json_from_dictionary()
+            else:
+                print(f'unable to send proper interview message')
     else:
         print(f'unable to load {preloadedJSONFile}.\n')
 
