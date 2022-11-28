@@ -1,11 +1,21 @@
-# Interview Bot
+# InterviewBot
 
 _Development should be done with any modern distro of Linux._
 _Support for Windows is not tested and should be done at your own risk._
 
-Interview Bot is a simple slack bot that deals with (re?)scheduling appointments.
-Jira webhooks are fed to a simple backend flask server. This bot then works in
-liaison with slack users to manage the scheduling data.
+InterviewBot is a simple Slack bot that provides REST endpoints to create,
+update and delete appointments.  Appointments are posted as messages to a
+Slack channel, where they are pinned and updated or removed as needed.
+Reactions to the messages are tracked and can be queried, along with all
+appointment data, via another REST endpoint.  Data is maintained in memory and
+backed up to persistent storage for recovery.
+
+The REST endpoints are designed to allow a candidate tracking system, such as
+Jira, to push interview appointment data to the bot, such as via a Webhook
+listener that filters issue updates down to a minimal set of information
+needed for posting to Slack.  Periodic queries to this bot could also pass
+back information such as users that have signed up for an interview via
+reactions.
 
 ## Development Environment
 
@@ -18,8 +28,16 @@ __NOTE__: `node 16.17+` is required.
 1. Install `node`
     - `sudo apt update`
     - `sudo apt install nodejs`
+    - Windows (Orion workstation): Go to https://nodejs.org/en/download/ and
+      download the Windows Binary (.zip) for your platform, which can be
+      extracted to C:\Users\<username>\AppData\Local.  Add the resulting
+      node-v... folder to your PATH.
 2. Install `npm`:
     - `sudo apt install npm`
+    - Windows: The installation of Node includes NPM.
+3. Install `Bot Framework Emulator`:
+    - Go to https://github.com/microsoft/BotFramework-Emulator/releases and
+      download and install the latest release for your operating system.
 
 Check the installation with `node -v`.
 

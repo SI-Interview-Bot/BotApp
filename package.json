@@ -1,21 +1,45 @@
 {
   "name": "interview_bot",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "dev": "nodemon app.js"
-  },
+  "description": "Interview Bot",
   "keywords": [],
   "author": "",
   "license": "ISC",
+  "main": "index.js",
+  "scripts": {
+    "start": "node ./index.js",
+    "watch": "nodemon ./index.js | pino-pretty",
+    "lint": "eslint .",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "nodemonConfig": {
+    "ignore": [
+      "local_JSON_file.json",
+      "events.json",
+      "tests"
+    ]
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/SI-Interview-Bot/BotApp.git"
+  },
   "dependencies": {
-    "@slack/bolt": "^3.12.1",
-    "@slack/web-api": "^6.7.2"
+    "botbuilder": "~4.17.0",
+    "dotenv": "^8.2.0",
+    "pino": "~8.7.0",
+    "restify": "~8.6.0"
+  },
+  "lintDependencies": {
+    "eslint": "^7.0.0",
+    "eslint-config-standard": "^14.1.1",
+    "eslint-plugin-import": "^2.20.2",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-promise": "^4.2.1",
+    "eslint-plugin-standard": "^4.0.1"
   },
   "devDependencies": {
-    "dotenv": "^16.0.3",
-    "nodemon": "^2.0.20"
+    "nodemon": "~2.0.4",
+    "pino-pretty": "^9.1.1",
+    "pino-caller": "^3.2.0"
   }
 }

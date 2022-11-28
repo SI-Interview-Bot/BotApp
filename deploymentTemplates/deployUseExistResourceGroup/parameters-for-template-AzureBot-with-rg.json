@@ -1,0 +1,33 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentParameters.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "azureBotId": {
+      "value": "interviewbot-js-v1-0-0-codex-rtx"
+    },
+    "azureBotSku": {
+      "value": "S1"
+    },
+    "azureBotRegion": {
+      "value": "global"
+    },
+    "botEndpoint": {
+      "value": "https://interviewbot-js-v1-0-0-codex-rtx.azurewebsites.net/api/messages"
+    },
+    "appType": {
+      "value": "MultiTenant"
+    },
+    "appId": {
+      "value": "c9e57b73-74a6-4c69-a105-41ff767785ed"
+    },
+    "UMSIName": {
+      "value": ""
+    },
+    "UMSIResourceGroupName": {
+      "value": ""
+    },
+    "tenantId": {
+      "value": ""
+    }
+  }
+}
