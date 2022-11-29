@@ -114,12 +114,13 @@ class InterviewInformation:
 @app.route(f'/{RECEIVE_JIRA_JSON}', methods=['POST'])
 def receive_data():
     incoming_data = request.get_data()
+    print(f'incoming data: {incoming_data}. it is of type {type(incoming_data)}')
     json_object = json.loads(incoming_data)
 
     print("[+] {ret_json_object}\n")
     interview = InterviewInformation(json_object)
     if interview.create_and_send():
-        interview_messages[interview.get_timestamp()] = interview
+        interview_messages[interview.get_timestamp()] = interview.get_interviewdata()
         store_json_from_dictionary()
     else:
         print(f'unable to send proper interview message')
@@ -137,9 +138,8 @@ def load_dictionary_from_json() -> bool:
     return False
 
 def store_json_from_dictionary() -> bool:
-    with open(JSON_FILE, 'w'):
-        json_object = json.dump(interview_messages, )
-    json_object = json.dumps(interview_messages, JSON_FILE, indent = 4)
+    with open(JSON_FILE, 'w') as outfile:
+        json_object = json.dump(interview_messages, outfile, indent=4)
     return True
 
 # Functions below are designed for different /commands.
