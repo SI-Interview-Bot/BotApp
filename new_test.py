@@ -111,15 +111,8 @@ class InterviewInformation:
 #                                   FUNCTIONS                                             #
 ###########################################################################################
 # Function needs to load the JSON file from 
-@app.route('/{ISSUE_UPDATE}', methods=['POST'])
-def load_interview_json() -> bool:
-    incoming_dictionary = request.get_data()
-    interview_data = json.loads(incoming_dictionary)
-
-    return True
-
 @app.route(f'/{RECEIVE_JIRA_JSON}', methods=['POST'])
-def receive_data() -> bool:
+def receive_data():
     incoming_data = request.get_data()
     json_object = json.loads(incoming_data)
 
@@ -130,7 +123,7 @@ def receive_data() -> bool:
         store_json_from_dictionary()
     else:
         print(f'unable to send proper interview message')
-    return True
+    return Response(), 200
 
 def load_dictionary_from_json() -> bool:
     if (os.path.exists(f'./{JSON_FILE}')):
