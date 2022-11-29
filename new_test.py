@@ -5,7 +5,6 @@ Slack Bot used to post information about interviews to our channel.
 # Standard imports
 import os
 
-from http import client
 import string
 import json
 
@@ -15,7 +14,6 @@ from flask import Flask, request, Response
 #from flask_script import Manager
 
 # Need this import to do actions after loading app, running into errors...
-# From flask_script import Manager
 from dotenv import load_dotenv  
 from pathlib import Path
 from slackeventsapi import SlackEventAdapter
@@ -29,28 +27,27 @@ load_dotenv(dotenv_path=env_path)
 DEBUG_STATUS = True
 
 WORKING_CHANNEL = '#interviewbot-test'
+RECEIVE_JIRA_JSON = "receive-JIRA-JSON"
 
 app = Flask(__name__)
-#manager = Manager(app)
-JSON_FILE = 'db.json'
 
-slack_event_adapter = SlackEventAdapter(os.environ['SIGNING_SECRET'],'/slack/events', app)
+slack_event_adapter = SlackEventAdapter(os.environ['SIGNING_SECRET'], '/slack/events', app)
 client = slack_sdk.WebClient(token=os.environ['SLACK_TOKEN'])
 
 BOT_ID = client.api_call('auth.test')['user_id']
 
 interview_messages = {}
-
+JSON_FILE = 'db.json'
 ###########################################################################################
 #                                   CLASSES                                               #
 ###########################################################################################
 class InterviewInformation:
-    START_TEXT = {
+    message = {
         'type': 'section',
         'text' : {
             'type': 'mrkdwn',
             'text': (
-                'This is a test of reactions'
+                'subject to change? could use markdown to edit messages to ensure there are enough interviewers for certain meetings. '
             )
         }
     }
@@ -61,18 +58,23 @@ class InterviewInformation:
         self._timestamp = None
         self._interviewData = interview_data
         self.completed = False
-        self._attendants = []
+        self._interviewer = []
 
     #if we store the bots information as markdown we can edit it later, could be useful to say who is going to do that meeting and who is not, and whether enough people have said they are going to parttake in it
     def create_and_send(self) -> bool:
         success_status = True
+        error_string = ''
         if self._interviewData['interviewType'] == '' or None:
+            error_string += 'Missing interviewType information. '
             success_status = False
         if self._interviewData['dateTime'] == '' or None:
+            error_string += 'Missing dateTime information. '
             success_status = False
         if self._interviewData['JIRATicketNumber'] == '' or None:
+            error_string += 'Missing JIRATicketNumber information. '
             success_status = False
         if self._interviewData['name'] == '' or None:
+            error_string += 'Missing name information. '
             success_status = False
         
         if success_status:
@@ -80,20 +82,20 @@ class InterviewInformation:
             data = client.chat_postMessage(channel='#interviewbot-test', text=message_to_send)
             self._timestamp = data['ts']
         else:
-            print("something went wrong, was unable to verify the input json for all the proper information.")
+            print(f"something went wrong, here are the errors: {error_string}")
 
         return success_status
 
-    def add_attendant(self, attendant: string) -> bool:
-        if attendant not in self._attendants:
-            self._attendants.append(attendant)
+    def add_interviewer(self, interviewer: string) -> bool:
+        if interviewer not in self._interviewers:
+            self._interviewers.append(interviewer)
             return True
         
         return False
 
-    def remove_attendat(self, attendant: string) -> bool:
-        if attendant in self._attendants:
-            self._attendants.remove(attendant)
+    def remove_interviewer(self, interviewer: string) -> bool:
+        if interviewer in self._interviewers:
+            self._interviewers.remove(interviewer)
             return True
 
         return False
@@ -116,23 +118,36 @@ def load_interview_json() -> bool:
 
     return True
 
+@app.route(f'/{RECEIVE_JIRA_JSON}', methods=['POST'])
+def receive_data() -> bool:
+    incoming_data = request.get_data()
+    json_object = json.loads(incoming_data)
+
+    print("[+] {ret_json_object}\n")
+    interview = InterviewInformation(json_object)
+    if interview.create_and_send():
+        interview_messages[interview.get_timestamp()] = interview
+        store_json_from_dictionary()
+    else:
+        print(f'unable to send proper interview message')
+    return True
+
 def load_dictionary_from_json() -> bool:
-    dictionary_loaded = True
     if (os.path.exists(f'./{JSON_FILE}')):
         print(f'Found {JSON_FILE} in local directory. loading to dictionary now...')
         interview_messages = json.load(f'./{JSON_FILE}')
         # Need to make sure slack bot hasn't altered from directory, need to go through
         # Messages to verifngroy. 
-    else:
-        print(f'Unable to find {JSON_FILE}. Starting with empty database...')
-    return dictionary_loaded
+        return True
+        
+    print(f'Unable to find {JSON_FILE}. Starting with empty database...')
+    return False
 
 def store_json_from_dictionary() -> bool:
     with open(JSON_FILE, 'w'):
         json_object = json.dump(interview_messages, )
     json_object = json.dumps(interview_messages, JSON_FILE, indent = 4)
     return True
-
 
 # Functions below are designed for different /commands.
 @app.route('/test', methods=['POST'])
@@ -141,11 +156,6 @@ def test():
     user_id = data.get('user_id') # This gets ther user_id
     channel_id = data.get('channel_id') # This gets the channel id
     ts = data.get('ts') # This gets the timestamp
-    #print(data)
-
-    someItem = client.chat_postMessage(channel='#interviewbot-test', text='test')
-
-    print(f'\n\n someItem is equal to: {someItem} \n\n')
 
 
     print(f'channel_ID: {channel_id}. user_id: {user_id}')
@@ -168,14 +178,15 @@ def test_read_preloaded_json():
     else:
         print(f'unable to load {preloadedJSONFile}.\n')
 
-
 # Functions below are designed for different slack events, and handle those events.
 @slack_event_adapter.on('message')
-def message(payLoad) -> None:
+def message(payLoad):
     event = payLoad.get('event', {})
     channel_id = event.get('channel')
     user_id = event.get('user')
     text = event.get('text')
+
+    print('message recieved!')
 
 
 
@@ -186,53 +197,31 @@ def message(payLoad) -> None:
 
     print(payLoad)
 
-
 @slack_event_adapter.on('reaction_removed')
 def removed_reaction(payLoad) -> None:
     event = payLoad.get('event', {})
     channel_id = event.get('item', {}).get('channel')
     user_id = event.get('user')
     reaction = payLoad.get('event').get('reaction')
-
+    print("REMOVED REACTTION!")
     # This statement checks for either white check mark or x, and returns if it is neither
     if reaction != 'white_check_mark' or 'x':
         return
 
-    # Need to implement a system that checks dictionary for discrepancies, fixes those discrepancies
-    # and then moves on. 
-    
-    #print(payLoad)
 
     return 
 
-
 @slack_event_adapter.on('reaction_added')
 def reaction(payLoad) -> None:
-    event = payLoad.get('event', {})
-    channel_id = event.get('item', {}).get('channel')
-    user_id = event.get('user')
-    reaction = payLoad.get('event').get('reaction')
-    item_user = payLoad.get('user_id')
 
-    #if reaction == 'white_check_mark':
-        #client.chat_postMessage(channel='#interviewbot-test', text=f"<@{user_id}> reacted witha check!")
-    #elif reaction == 'x':
-        #client.chat_postMessage(channel='#interviewbot-test', text=f"{user_id} reacted with an x")
-    #else:
-        #client.chat_postMessage(channel='#interviewbot-test', text=f"{user_id} reacted with  useless emoji")
+    print("Saw that reaction was added\n")
+    print(payLoad)
 
     
-    # After that is implemented, do a search of which message got a reaction and update the dictionary
-
-    if item_user != BOT_ID:
-        print(f"NOT THE BOT. BOT IS {BOT_ID}. item_user is: {item_user} \n")
-    else:
-        print("IS THE BOT")
-    
-
     return
 
 #main function that runs everything. 
 if __name__ == "__main__":
-    load_dictionary_from_json()
+    #load_dictionary_from_json()
+    print("About to run the app")
     app.run(debug=DEBUG_STATUS, port=8088)
