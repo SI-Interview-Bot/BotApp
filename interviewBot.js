@@ -1,13 +1,31 @@
-const { ActivityHandler, MessageFactory, TurnContext } = require('botbuilder');
+const { ActivityHandler, ActivityTypes, MessageFactory, TurnContext } = require('botbuilder');
 
 class InterviewBot extends ActivityHandler {
-    constructor(eventStore, log, adapter, appId) {
+    constructor(eventStore, log, adapter, defaultChannel) {
         super();
         this._store = eventStore;
         this._log = log;
         this._adapter = adapter;
-        this._appId = appId;
         this._conversationRefs = {};
+        this._defaultChannel = defaultChannel;
+        this._defaultContext = new TurnContext(this._adapter, { type: ActivityTypes.Message, conversation: { id: this._defaultChannel } }); // FIXME
+
+        // FIXME Why does this need to be caught at such a broad level,
+        //     rather than by something like onReactionsAddedActivity?
+        this.onEvent(async (context, next) => {
+            this._log.debug(`Event: ${ JSON.stringify(context.activity) }`);
+            const act = context.activity;
+            const cd = act.channelData;
+            if (cd && cd.item && (cd.type == 'reaction_removed' || cd.type == 'reaction_added')) {
+                var reactions = [{ replyToId: cd.item.ts, channel: cd.item.channel, user: cd.user, type: cd.reaction }];
+                await this.processReactions(reactions, context, cd.type == 'reaction_added');
+            }
+            await next();
+        });
+        /*this.onMessage(async (context, next) => {
+            await this.sendMessageAndLogActivityId(context, `echo: ${ context.activity.text }`);
+            await next();
+        });*/
 
         var en = 'en-US', ny = 'America/New_York', num = 'numeric';
         var dopts = { timeZone: ny, weekday: 'long', month: num, day: num };
@@ -35,14 +53,12 @@ class InterviewBot extends ActivityHandler {
     async getEvents(key) {
         var events = {};
         for await (const e of this._store.iter()) {
-            if (!key || e.key === key) { events[e.key] = this.eventMessage(e); }
+            if (!key || e.key === key) {
+                events[e.key] = { ...e, message: this.eventMessage(e) };
+            }
         }
         this._log.debug(`Got events: ${JSON.stringify(events)}`);
         return events;
-    }
-
-    async continueConversation(ref, callback) {
-        await this._adapter.continueConversationAsync(this._appId, ref, callback);
     }
 
     async sendToConversations(text, idMap) {
@@ -56,22 +72,51 @@ class InterviewBot extends ActivityHandler {
             idMap = {};
             send = true;
         }
-        for (const id in refMap) {
-            var ref = refMap[id];
-            await this.continueConversation(ref, async (context) => {
-                var activity = text ? MessageFactory.text(text) : null;
-                if (!send && activity) {
+        const sendIt = async (context, id, ref, channelData) => {
+            var activity = text ? MessageFactory.text(text) : null;
+            if (activity && channelData) {
+                activity.channelData = channelData;
+            }
+            if (!send) {
+                if (!id) {
+                    this._log.warn(`No ID, can't ${ activity ? 'update' : 'delete' } message`);
+                    return;
+                }
+                if (activity) {
                     activity.id = id;
                 }
-                var res = !activity ? await context.deleteActivity(id)
-                    : send ? await context.sendActivity(activity)
-                           : await context.updateActivity(activity);
-                if (activity && (!res || !res.id || (!send && res.id != id))) {
-                    this._log.warn(`Error ${ !activity ? 'deleting' : (send ? 'sending' : 'updating') } message: ${ id } (${ res ? res.id : 'NIL' })`);
-                } else if (send) {
-                    idMap[res.id] = ref;
+            }
+            var res = !activity ? await context.deleteActivity(id)
+                : send ? await context.sendActivity(activity)
+                       : await context.updateActivity(activity);
+            this._log.debug(`Res (${ !activity ? 'delete' : (send ? 'send' : 'update') }): ${ res ? JSON.stringify(res) : 'NIL' }`);
+            if (send && (!res || !res.id)) {
+                this._log.warn(`Error sending message: ${ res ? JSON.stringify(res) : 'NIL' }`);
+            } else {
+                this._log.debug(`Message ${ !activity ? 'deleted' : (send ? 'sent' : 'updated') }: ${ res ? res.id : 'NIL' }`);
+                if (res && res.id) {
+                    var newid = res.id;
+                    idMap[newid] = ref || TurnContext.getConversationReference({ ...context.activity, ...activity });
+                    const slack = await this._adapter.getAPI(activity);
+                    if (!slack ||
+                        !(res = await slack.pins.add({ channel: activity.channelData.channel, timestamp: res.id })) ||
+                        !res.ok) {
+                        this._log.warn(`Failed to pin message ${ newid }: ${ slack ? (res ? res.error : '') : 'API error' }`);
+                    }
                 }
-            });
+            }
+        };
+        if (Object.keys(refMap).length == 0) {
+            // FIXME This hack works, but may not always. How do
+            //   we just send to a Slack channel when we have not
+            //   received a message from one since we started?
+            await sendIt(this._defaultContext, null, null, { channel: this._defaultChannel });
+        } else {
+            for (const id in refMap) {
+                var ref = refMap[id];
+                await this._adapter.continueConversation(ref, async (context) => {
+                    await sendIt(context, id, ref); });
+            }
         }
         return idMap;
     }
@@ -98,17 +143,14 @@ class InterviewBot extends ActivityHandler {
     }
 
     async sendMessageAndLogActivityId(context, text) {
-        const replyActivity = MessageFactory.text(text);
-        const resourceResponse = await context.sendActivity(replyActivity);
-        await this._store.append(resourceResponse.id, replyActivity);
+        const message = MessageFactory.text(text);
+        const response = await context.sendActivity(message);
+        //await this._store.append(response.id, message);
     }
 
-    // TODO Add Slack channel
-    // TODO Test message update/delete on Slack (no-op in Emulator)
+    // TODO Slack channel? (How to pin, etc.?)
     // TODO Persist conversation references between restarts?
     // TODO Event store persistence in Azure (Cosmo DB or Blobs?)
-    // TODO Pin messages in Slack
-    // TODO Slack reaction tracking
     // TODO Slack response buttons?
     async onConversationUpdateActivity(context) {
         const ref = TurnContext.getConversationReference(context.activity);
@@ -116,32 +158,23 @@ class InterviewBot extends ActivityHandler {
         this._conversationRefs[ref.conversation.id] = ref;
     }
 
-    async disabledonMessage(context, next) {
-        await this.sendMessageAndLogActivityId(context, `echo: ${ context.activity.text }`);
-        await next();
-    }
-
     async processReactions(reactions, context, added) {
         for (var i = 0, len = reactions.length; i < len; i++) {
-            // The ReplyToId property of the inbound MessageReaction Activity should
-            // correspond to a Message Activity that was previously sent from this bot.
-            var activity = await this._store.find(context.activity.replyToId);
-            if (!activity) {
-                // If we had sent the message from the error handler we wouldn't have
-                // recorded the Activity Id and so we shouldn't expect to see it in the log.
-                await this.sendMessageAndLogActivityId(context, `Activity ${ context.activity.replyToId } not found in the log.`);
+            this._log.debug(`Reaction ${ i }: ${ JSON.stringify(reactions[i]) }`);
+            // The replyToId of the inbound MessageReaction Activity
+            // should correspond to a Message ID that was previously
+            // sent from this bot.
+            var eventObj = await this._store.find(reactions[i].replyToId);
+            if (!eventObj) {
+                // If we had sent the message from the error handler
+                // we wouldn't have recorded the Activity Id and so
+                // we shouldn't expect to see it in the log.
+                this._log.warn(`Message ${ reactions[i].replyToId } not found.`);
             } else {
-                await this.sendMessageAndLogActivityId(context, `You ${ added ? "added" : "removed" } '${ reactions[i].type }' regarding '${ activity.text }'`);
+                // TODO Record the reaction
+                this._log.info(`User ${ reactions[i].user } ${ added ? "added" : "removed" } '${ reactions[i].type }' regarding '${ eventObj.key }'`);
             }
         }
-    }
-
-    async onReactionsAddedActivity(reactionsAdded, context) {
-        await this.processReactions(reactionsAdded, context, true);
-    }
-
-    async onReactionsRemovedActivity(reactionsRemoved, context) {
-        await this.processReactions(reactionsRemoved, context, false);
     }
 }
 

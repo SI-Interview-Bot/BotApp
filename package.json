@@ -9,6 +9,7 @@
   "scripts": {
     "start": "node ./index.js",
     "watch": "nodemon ./index.js | pino-pretty",
+    "debug": "node --inspect ./index.js | pino-pretty",
     "lint": "eslint .",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
@@ -25,10 +26,13 @@
   },
   "dependencies": {
     "botbuilder": "~4.17.0",
+    "botbuilder-adapter-slack": "~1.0.14",
     "dotenv": "^8.2.0",
     "pino": "~8.7.0",
+    "request": "^2.88.2",
     "restify": "~8.6.0"
   },
+  "FIXME": "The request dependency above is temporary, to fix botbuilder-adapter-slack",
   "lintDependencies": {
     "eslint": "^7.0.0",
     "eslint-config-standard": "^14.1.1",
@@ -39,7 +43,7 @@
   },
   "devDependencies": {
     "nodemon": "~2.0.4",
-    "pino-pretty": "^9.1.1",
-    "pino-caller": "^3.2.0"
+    "pino-caller": "^3.2.0",
+    "pino-pretty": "^9.1.1"
   }
 }

@@ -121,7 +121,14 @@ class EventStore {
         }
 
         var events = await this.events();
-        return (events && events[eventId]) ? events[eventId] : null;
+        if (events) {
+            for (const id in events) {
+                if (events[id].messageIds && events[id].messageIds[eventId]) {
+                    return events[id];
+                }
+            }
+        }
+        return null;
     }
 }
 exports.EventStore = EventStore;

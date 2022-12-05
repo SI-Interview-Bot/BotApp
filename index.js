@@ -14,14 +14,15 @@ var LOG = pino(LOGOPTS);
 //LOG.trace = function(...args) { if (args.length === 0) { return this.isLevelEnabled('trace'); } else { return this.originalTrace.apply(this, arguments); } };
 
 // Import required bot services.
-const { CloudAdapter, MemoryStorage,
-    ConfigurationBotFrameworkAuthentication } = require('botbuilder');
+const { MemoryStorage } = require('botbuilder');
+const { SlackAdapter, SlackEventMiddleware, SlackMessageTypeMiddleware } = require('botbuilder-adapter-slack');
 
 const { EventStore } = require('./eventStore');
 const { InterviewBot } = require('./interviewBot');
 
-const botFrameworkAuthentication = new ConfigurationBotFrameworkAuthentication(process.env);
-const adapter = new CloudAdapter(botFrameworkAuthentication);
+const adapter = new SlackAdapter({ clientSigningSecret: process.env.SLACK_SIGNING_SECRET, botToken: process.env.BOT_TOKEN });
+adapter.use(new SlackEventMiddleware());
+adapter.use(new SlackMessageTypeMiddleware());
 
 adapter.onTurnError = async (context, error) => {
     // This check writes out errors to console log .vs. app insights.
@@ -39,8 +40,7 @@ adapter.onTurnError = async (context, error) => {
     );
 
     // Send a message to the user
-    await context.sendActivity('The bot encountered an error or bug.');
-    await context.sendActivity('To continue to run this bot, please fix the bot source code.');
+    await context.sendActivity('The bot encountered an error or bug, please fix it!');
 };
 
 // Create storage and Event Store used for tracking sent messages.
@@ -48,7 +48,7 @@ const memoryStorage = new MemoryStorage();
 const eventStore = new EventStore(memoryStorage, LOG, process.env.EVENTSTORE || './events.json');
 
 // Create the bot that will handle incoming messages.
-const bot = new InterviewBot(eventStore, LOG, adapter, process.env.MicrosoftAppId);
+const bot = new InterviewBot(eventStore, LOG, adapter, process.env.DEFAULT_CHANNEL);
 
 // Create HTTP server.
 const server = restify.createServer({
@@ -100,9 +100,10 @@ server.del('/api/events/:key', async (req, res, next) => {
     return next();
 });
 
-server.post('/api/messages', async (req, res) => {
-    // Route received a request to adapter for processing
-    await adapter.process(req, res, (context) => bot.run(context));
+server.post('/api/messages', (req, res) => {
+    LOG.debug(`POST /api/messages: ${ JSON.stringify(req.body) }`);
+    adapter.processActivity(req, res, async (context) => {
+        await bot.run(context); });
 });
 
 server.post('/api/echo', async (req, res, next) => {
